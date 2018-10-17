@@ -8,6 +8,7 @@ public class GameMgr : MonoBehaviour
     public Transform GamePanel;
     public Material LineRendererMat;
     public static GameMgr Instance;
+    public int pointNum;
     Point[] AllUsePoints;
     private List<Point> pointPoolList= new List<Point>();
     private List<Line> linePoolList = new List<Line>();
@@ -38,7 +39,7 @@ public class GameMgr : MonoBehaviour
     // Use this for initialization
 	void Start ()
 	{
-	    CreatPoints(4);
+	    CreatPoints(pointNum);
 	}
 
     public void SetDataOld()
@@ -211,19 +212,20 @@ public class GameMgr : MonoBehaviour
         List<Vector2Int> ret = new List<Vector2Int>();
         for (int i = 0; i < pointNum; i++)
         {
+            Vector2Int temp = new Vector2Int(0, i);
             //  做首尾相连
             if (i+1<pointNum)
             {
                 ret.Add(new Vector2Int(i,i + 1));
                 if (i>1)//起始点0 的左邻居 与 右邻居（下面的最大点）去除  做外部链接
                 {
-                    ret.Add(new Vector2Int(0,i));
+                    ret.Add(temp);
                 }
             }
             //移除最大点后的 最大点与起始点相连
-            else
+            else if(!ret.Contains(temp))//主要是2点的时候 其他不会重复
             {
-                ret.Add(new Vector2Int(0,i));
+                ret.Add(temp);
             }
             //大于3点， 将最大点拿出 至于内部 分别于其他点相连
             if(largerThan3)

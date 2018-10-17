@@ -450,6 +450,7 @@ MonoBehaviour:
     type: 2}
   GamePanel: {fileID: 1700082473}
   LineRendererMat: {fileID: 2100000, guid: 4392525be1c7f51478a9fab70e0d9b1c, type: 2}
+  pointNum: 7
 --- !u!4 &2136831819
 Transform:
   m_ObjectHideFlags: 0
