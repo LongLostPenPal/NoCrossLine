@@ -9,6 +9,7 @@ public class GameMgr : MonoBehaviour
     public Material LineRendererMat;
     public static GameMgr Instance;
     public int pointNum;
+    [Space(10)] public bool RandomMode;
     Point[] AllUsePoints;
     private List<Point> pointPoolList= new List<Point>();
     private List<Line> linePoolList = new List<Line>();
@@ -16,50 +17,55 @@ public class GameMgr : MonoBehaviour
     /// key值 id小的point id 赋值在 x , 大的赋值给 y 
     /// </summary>
     Dictionary<Vector2Int,Line> linesInUseDic = new Dictionary<Vector2Int,Line>();
+
+    private const float width = 400f;
+    private const float height = 500f;
     private void Awake()
     {
         Instance = this;
     }
 
-//    private void Update()
-//    {
-//        if (Input.GetKeyDown(KeyCode.J))
-//        {
-//            if (IsCross(new Vector2Int(0,1),new Vector2Int(2,3)))
-//            {
-//                Debug.LogError("shi");
-//            }
-//            else
-//            {
-//                Debug.LogError("fou");
-//            }
-//        }
-//    }
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Debug.LogError(Random.Range(0,1));
+//            Application.Quit();
+        }
+    }
 
     // Use this for initialization
 	void Start ()
 	{
-	    CreatPoints(pointNum);
+        if(RandomMode)
+	    {
+            CreatPoints(pointNum);
+            CreatRandomLine(pointNum);
+            OnPointMove(AllUsePoints[0]);
+        }
+        else
+        {
+	        CreatPoints(pointNum);
+            CreatStandardLine(pointNum);
+            //触发下检测
+            OnPointMove(AllUsePoints[0]);
+        }
 	}
 
-    public void SetDataOld()
+    public void ResetPoint()
     {
-        if(AllUsePoints!=null)
-        {
-            for(int i = 0;i < AllUsePoints.Length;i++)
-            {
-                AllUsePoints[i].gameObject.SetActive(false);
-                pointPoolList.Add(AllUsePoints[i]);
-            }    
-        }
-        
-        foreach(var lineRenderer in linesInUseDic)
-        {
-            lineRenderer.Value.gameObject.SetActive(false);
-            linePoolList.Add(lineRenderer.Value);
-        }
-        AllUsePoints = null;
-        linesInUseDic.Clear();
+        int num = pointNum;
+        CreatPoints(num);
+//        if(Random.Range(0,2)==1)
+//        {
+//            CreatStandardLine(num);
+//        }
+//        else
+//        {
+            CreatRandomLine(num);
+//        }
+        //触发下检测
+        OnPointMove(AllUsePoints[0]);
     }
 
     private void OnPointMove(Point point)
@@ -112,7 +118,6 @@ public class GameMgr : MonoBehaviour
             }
         }       
     }
-
     private void CreatPoints(int pointNum)
     {
         SetDataOld();
@@ -132,16 +137,36 @@ public class GameMgr : MonoBehaviour
             point.Init();
             point.gameObject.SetActive(true);
             point.id = i;
+            point.gameObject.name = "Point_" + i;
             AllUsePoints[i] = point;
             point.transform.SetParent(GamePanel);
-            point.transform.localPosition = Vector3.zero;
+            point.transform.localPosition = new Vector3(Random.Range(-width,width),Random.Range(-height,height),0);
             point.transform.localScale = Vector3.one;
             point.OnMove = OnPointMove;
         }
-        CreatLine(pointNum);
+    }
+    void SetDataOld()
+    {
+        if(AllUsePoints != null)
+        {
+            for(int i = 0;i < AllUsePoints.Length;i++)
+            {
+                AllUsePoints[i].gameObject.SetActive(false);
+                AllUsePoints[i].gameObject.name = "Point_Unused";
+                pointPoolList.Add(AllUsePoints[i]);
+            }
+        }
+
+        foreach(var lineRenderer in linesInUseDic)
+        {
+            lineRenderer.Value.gameObject.SetActive(false);
+            linePoolList.Add(lineRenderer.Value);
+        }
+        AllUsePoints = null;
+        linesInUseDic.Clear();
     }
 
-    private void CreatLine(int pointNum)
+    private void CreatStandardLine(int pointNum)
     {
         if(pointNum <= 1)
         {
@@ -153,7 +178,18 @@ public class GameMgr : MonoBehaviour
             lineRenderer.Value.SetPositions(new Vector3[] { AllUsePoints[lineRenderer.Key.x].Position,AllUsePoints[lineRenderer.Key.y].Position });
         }
     }
-
+    private void CreatRandomLine(int i)
+    {
+      if(pointNum <= 1)
+        {
+            return;
+        }
+      AddLineRenderer2InUseList(GetLinePositionByPointNumInRandom(pointNum));
+        foreach(var lineRenderer in linesInUseDic)
+        {
+            lineRenderer.Value.SetPositions(new Vector3[] { AllUsePoints[lineRenderer.Key.x].Position,AllUsePoints[lineRenderer.Key.y].Position });
+        }
+    }
 
     private void AddLineRenderer2InUseList( List<Vector2Int> posList)
     {
@@ -236,6 +272,98 @@ public class GameMgr : MonoBehaviour
         return ret;
     }
 
+    private List<Vector2Int> GetLinePositionByPointNumInRandom(int pointNum)
+    {
+        if(pointNum <= 1)
+        {
+            return null;
+        }
+        if (pointNum==2)
+        {
+            return new List<Vector2Int>(){new Vector2Int(0,1)};
+        }
+        LogScript.LogClass log = new LogScript.LogClass();
+        log.AllPointsNum = pointNum;
+        //最少三点做圈
+        int circleNum = Random.Range(3,pointNum);
+        log.circleNum = circleNum;
+        List<Vector2Int> ret = new List<Vector2Int>();
+        for(int i = 0;i < circleNum;i++)
+        {
+            Vector2Int temp = new Vector2Int(0,i);
+            //  做首尾相连
+            if(i + 1 < circleNum)
+            {
+                ret.Add(new Vector2Int(i,i + 1));
+            }
+            //移除最大点后的 最大点与起始点相连
+            else if(!ret.Contains(temp))//主要是2点的时候 其他不会重复
+            {
+                ret.Add(temp);
+            }
+        }
+        int leftNum = pointNum - circleNum;
+        int insideAndOutSideNum = 0;
+        //内外各一点 剩余做两点插入
+        if(leftNum > 2)
+        {
+            insideAndOutSideNum = 2;
+            leftNum -= 2;
+        }
+        else
+        {
+            insideAndOutSideNum = leftNum;
+            leftNum = 0;
+        }
+        log.insideAndOutSideNum = insideAndOutSideNum;
+        //leftNum = 0 1 2
+        for(int i = 0;i < insideAndOutSideNum;i++)
+        {
+            int pointId = circleNum + i;
+            //这个点加几条线 最少也得连俩 = =
+            int lineNum = Random.Range(2,circleNum);
+            for(int j = 0;j < lineNum;j++)
+            {
+                //这些线连到那些点
+                int p = Random.Range(0,circleNum);
+                Vector2Int v = new Vector2Int(p,pointId);
+                while(ret.Contains(v))
+                {
+                     p = Random.Range(0,circleNum - 1);
+                     v = new Vector2Int(p,pointId);
+                }
+                if(!ret.Contains(v))
+                {
+                    ret.Add(v);
+                }
+            }
+        }
+        log.leftNum = leftNum;
+        //leftNum 剩下的点全部做 两点间插入
+        for(int i = 0;i < leftNum;i++)
+        {
+            int pointId = insideAndOutSideNum+circleNum + i;
+            int pointid = Random.Range(0, pointNum - leftNum);
+            foreach (var vector2Int in ret)
+            {
+                if(vector2Int.x == pointid || vector2Int.y == pointid)
+                {
+                    if (Random.Range(0,1)==0)
+                    {
+                        ret.Add(new Vector2Int(vector2Int.x,pointId));
+                        ret.Add(new Vector2Int(vector2Int.y,pointId));
+                        break;
+                    }
+                }
+            }
+        }
+        log.pointList = ret;
+        //两点随意放
+        //三点只能放两个，多了或者四点就可能存在无解情况
+        //多了无所谓，N点只能放两个。重点是两个 内外各一个
+        LogScript.Instance.WriteLog(log);
+        return ret;
+    }
 
     private bool IsCross(Vector2Int line1,Vector2Int line2)
     {
