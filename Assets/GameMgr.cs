@@ -67,6 +67,26 @@ public class GameMgr : MonoBehaviour
         OnPointMove(AllUsePoints[0]);
     }
 
+    public void CreatFromLog()
+    {
+        LogScript.LogClass log = LogScript.Instance.ReadLog();
+        if (log!=null)
+        {
+            CreatPoints(log.AllPointsNum);
+            List<Vector2Int> point = new List<Vector2Int>();
+            for(int i = 0;i < log.pointList.Count;i++)
+            {
+                point.Add(new Vector2Int(log.pointList[i].x,log.pointList[i].y));
+            }
+            AddLineRenderer2InUseList(point);
+            foreach(var lineRenderer in linesInUseDic)
+            {
+                lineRenderer.Value.SetPositions(new Vector3[] { AllUsePoints[lineRenderer.Key.x].Position,AllUsePoints[lineRenderer.Key.y].Position });
+            }
+            OnPointMove(AllUsePoints[0]);
+        }
+    }
+
     private void OnPointMove(Point point)
     {
         foreach(var lineRenderer in point.SelfLinesDic)
