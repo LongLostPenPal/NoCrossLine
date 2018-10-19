@@ -25,6 +25,10 @@ public class LogScript
         string str = JsonConvert.SerializeObject(obj);
               //下面将这个字符串写入本地文本
         StreamWriter sw;
+        string path = "Assets/test.txt";
+        #if UNITY_ANDROID
+         path = Application.persistentDataPath + "/test.txt";
+        #endif
         FileInfo t = new FileInfo("Assets/test.txt");
         sw = t.CreateText();
 //        if(!t.Exists)

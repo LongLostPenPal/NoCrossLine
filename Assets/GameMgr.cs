@@ -29,8 +29,7 @@ public class GameMgr : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            Debug.LogError(Random.Range(0,1));
-//            Application.Quit();
+            Application.Quit();
         }
     }
 
@@ -159,6 +158,8 @@ public class GameMgr : MonoBehaviour
 
         foreach(var lineRenderer in linesInUseDic)
         {
+            lineRenderer.Value.SetPosition(0,Vector3.zero);
+            lineRenderer.Value.SetPosition(1,Vector3.zero);
             lineRenderer.Value.gameObject.SetActive(false);
             linePoolList.Add(lineRenderer.Value);
         }
